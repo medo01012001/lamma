@@ -533,3 +533,6 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .howto ol { font-size: .92rem; }
   .hpts, .htip { font-size: .85rem; }
 }
+#tolobby[hidden] { display: none; }
+.mbox p.muted { margin: 0 0 14px; line-height: 1.6; }
+@media (max-width: 400px) { #tolobby span { display: none; } }

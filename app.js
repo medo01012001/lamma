@@ -927,11 +927,32 @@ function showLeave() {
   d.onclick = e => { if (e.target === d) close(); };
   $('#mout', d).onclick = () => { close(); leaveRoom(); };
 }
+// ---------- الهوست يرجع الكل للصالون ----------
+function askLobby() {
+  if ($('.modal') || !ctx().isHost) return;
+  const d = document.createElement('div');
+  d.className = 'modal';
+  d.innerHTML = `<div class="mbox" role="dialog" aria-modal="true">
+    <div class="mtitle">🏠 نرجعو للصالون؟</div>
+    <p class="muted">اللعبة غادي توقف دابا، والنقط ديال هاد اللعبة ماغاديش تتحسب فالمجموع.</p>
+    <div class="mbtns"><button class="btn" id="lyes">إيه، نرجعو 🏠</button><button class="btn ghost" id="lno">لا، نكملو</button></div></div>`;
+  document.body.appendChild(d);
+  const close = () => d.remove();
+  $('#lno', d).onclick = close;
+  d.onclick = e => { if (e.target === d) close(); };
+  $('#lyes', d).onclick = () => {
+    close();
+    const c = ctx();
+    if (!c.isHost) return;
+    if (c.state && c.state.phase && c.state.phase !== 'final') H.sys('🏠 الهوست رجع الكل للصالون');
+    backToLobby();
+  };
+}
 function buildRoomShell() {
   $('#app').innerHTML = `<div class="room">
     <header><div class="logo sm">لمّة<span>🎉</span></div>
       <button class="codechip" id="codechip" title="نسخ الكود">🔑 <b dir="ltr">${S.code}</b></button>
-      <div class="hbtns"><button class="btn ghost small" id="help" aria-label="كيفاش تلعب">❓</button><button class="btn ghost small" id="leave">خروج 🚪</button></div></header>
+      <div class="hbtns"><button class="btn ghost small" id="tolobby" hidden aria-label="رجوع للصالون">🏠<span> الصالون</span></button><button class="btn ghost small" id="help" aria-label="كيفاش تلعب">❓</button><button class="btn ghost small" id="leave">خروج 🚪</button></div></header>
     <main id="stage"></main>
     <aside id="side">
       <div class="card players"><div class="sidehead"><span id="ptitle">اللاعبين</span> <span id="pcount"></span></div><div id="teambar"></div><div id="plist"></div></div>
@@ -941,6 +962,7 @@ function buildRoomShell() {
   $('#codechip').onclick = () => copyText(S.code, 'تنسخ الكود ✅');
   $('#leave').onclick = showLeave;
   $('#help').onclick = () => showHelp();
+  $('#tolobby').onclick = askLobby;
   $('#cform').onsubmit = e => { e.preventDefault(); const i = $('#chatin'); sendChat(i.value); i.value = ''; };
   $('#chattog').onclick = () => toggleChat();
   $('#chatpeek').onclick = () => toggleChat(true);
@@ -967,6 +989,8 @@ function render() {
   if (!GAMES[g] || !c.state.phase) { mod = Lobby; key = 'lobby:' + (c.meta.sel || 'draw') + ':' + (c.isHost ? 'h' : 'p'); }
   else if (c.state.phase === 'final') { mod = Final; key = g + ':final'; }
   else { mod = GAMES[g]; key = g + ':' + mod.key(c) + ':' + (c.isHost ? 'h' : 'p'); }
+  const tl = $('#tolobby'), showTL = c.isHost && mod !== Lobby;
+  if (tl.hidden === showTL) tl.hidden = !showTL;
   const stage = $('#stage');
   if (key !== S.key) { S.key = key; stage.innerHTML = ''; mod.build(stage, c); tickTimers(c); }
   mod.update && mod.update(stage, c);
