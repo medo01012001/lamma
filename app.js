@@ -518,8 +518,8 @@ const Letters = {
       const v = (ans[id] && ans[id]['c' + i]) || '';
       const ok = Letters.isValid(c, id, i);
       const pts = st.cells && st.cells[id + '_' + i];
-      return `<td class="${ok ? 'ok' : 'bad'} ${review && c.isHost ? 'tap' : ''}" data-k="${id}_${i}" data-ok="${ok ? 1 : 0}">${esc(v) || '—'}${!review && pts ? `<sup>+${pts}</sup>` : ''}</td>`;
-    }).join('')}${review ? '' : `<td class="tot">+${(st.gains && st.gains[id]) || 0}</td>`}</tr>`).join('')}</tbody>`;
+      return `<td class="${ok ? 'ok' : 'bad'} ${review && c.isHost ? 'tap' : ''}" data-c="${CATS[i]}" data-k="${id}_${i}" data-ok="${ok ? 1 : 0}">${esc(v) || '—'}${!review && pts ? `<sup>+${pts}</sup>` : ''}</td>`;
+    }).join('')}${review ? '' : `<td class="tot" data-c="المجموع">+${(st.gains && st.gains[id]) || 0}</td>`}</tr>`).join('')}</tbody>`;
     const t = $('#lt', el);
     if (t._h !== html) { t.innerHTML = html; t._h = html; }
     const f = $('#lf', el);
@@ -754,6 +754,26 @@ function addChat(m) {
   while (box.children.length > 80) box.firstChild.remove();
   box.scrollTop = box.scrollHeight;
   if (m.k === 'ok') ding();
+  if (isMobile() && !$('#chat').classList.contains('open')) unread++;
+  updatePeek();
+}
+const isMobile = () => matchMedia('(max-width: 900px)').matches;
+let unread = 0;
+function toggleChat(open) {
+  const ch = $('#chat');
+  if (!ch) return;
+  open = open ?? !ch.classList.contains('open');
+  ch.classList.toggle('open', open);
+  if (open) { unread = 0; const box = $('#msgs'); box.scrollTop = box.scrollHeight; }
+  updatePeek();
+}
+function updatePeek() {
+  const u = $('#unread'), pk = $('#chatpeek');
+  if (!u || !pk) return;
+  u.textContent = unread > 9 ? '9+' : unread || '';
+  const last = S.chat.slice(-2);
+  pk.innerHTML = '';
+  last.forEach(m => pk.appendChild(chatEl(m)));
 }
 function chatEl(m) {
   const d = document.createElement('div');
@@ -826,12 +846,14 @@ function buildRoomShell() {
     <main id="stage"></main>
     <aside id="side">
       <div class="card players"><div class="sidehead">اللاعبين <span id="pcount"></span></div><div id="plist"></div></div>
-      <div class="card" id="chat"><div class="sidehead">الشات 💬</div><div id="msgs"></div>
-        <form id="cform" class="row"><input id="chatin" maxlength="120" autocomplete="off"><button class="btn small">➤</button></form></div>
+      <div class="card" id="chat"><div class="sidehead">الشات 💬</div><div id="msgs"></div><div id="chatpeek"></div>
+        <form id="cform" class="row"><button type="button" class="chattog" id="chattog" aria-label="الشات">💬<i id="unread"></i></button><input id="chatin" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn small">➤</button></form></div>
     </aside></div>`;
   $('#codechip').onclick = () => copyText(S.code, 'تنسخ الكود ✅');
   $('#leave').onclick = () => { if (confirm('واش بغيتي تخرج من الروم؟')) leaveRoom(); };
   $('#cform').onsubmit = e => { e.preventDefault(); const i = $('#chatin'); sendChat(i.value); i.value = ''; };
+  $('#chattog').onclick = () => toggleChat();
+  $('#chatpeek').onclick = () => toggleChat(true);
   const box = $('#msgs');
   S.chat.forEach(m => box.appendChild(chatEl(m)));
   box.scrollTop = box.scrollHeight;
