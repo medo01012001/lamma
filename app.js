@@ -704,6 +704,7 @@ const Lobby = {
       <h2>${host ? 'ختار اللعبة 👇' : '⏳ الهوست كيختار اللعبة...'}</h2>
       <div class="gcards">${Object.values(GAMES).map(x => `<button class="gcard ${x.id === sel ? 'on' : ''}" data-g="${x.id}" ${host ? '' : 'disabled'}>
         <span class="gi">${x.icon}</span><b>${x.title}</b><small>${x.desc}</small><em>من ${x.min} ${x.min === 1 ? 'لاعب' : 'لاعبين'}</em></button>`).join('')}</div>
+      <div class="card hcard">${howtoHtml(sel)}</div>
       <div class="settings card">${g.settings.map(s => `<label><span>${s.label}</span>${host
         ? `<select data-k="${s.k}">${s.opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>`
         : `<b data-k="${s.k}"></b>`}</label>`).join('')}</div>
@@ -930,7 +931,7 @@ function buildRoomShell() {
   $('#app').innerHTML = `<div class="room">
     <header><div class="logo sm">لمّة<span>🎉</span></div>
       <button class="codechip" id="codechip" title="نسخ الكود">🔑 <b dir="ltr">${S.code}</b></button>
-      <button class="btn ghost small" id="leave">خروج 🚪</button></header>
+      <div class="hbtns"><button class="btn ghost small" id="help" aria-label="كيفاش تلعب">❓</button><button class="btn ghost small" id="leave">خروج 🚪</button></div></header>
     <main id="stage"></main>
     <aside id="side">
       <div class="card players"><div class="sidehead"><span id="ptitle">اللاعبين</span> <span id="pcount"></span></div><div id="teambar"></div><div id="plist"></div></div>
@@ -939,6 +940,7 @@ function buildRoomShell() {
     </aside></div>`;
   $('#codechip').onclick = () => copyText(S.code, 'تنسخ الكود ✅');
   $('#leave').onclick = showLeave;
+  $('#help').onclick = () => showHelp();
   $('#cform').onsubmit = e => { e.preventDefault(); const i = $('#chatin'); sendChat(i.value); i.value = ''; };
   $('#chattog').onclick = () => toggleChat();
   $('#chatpeek').onclick = () => toggleChat(true);

@@ -513,3 +513,23 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .tlopt { font-size: 1.05rem; padding: 12px; }
   .qtext.proverb { font-size: 1.35rem; }
 }
+
+/* ---------- كيفاش تلعب ---------- */
+.hbtns { display: flex; gap: 6px; align-items: center; }
+#help { min-width: 40px; padding-inline: 10px; }
+.howto { text-align: right; }
+.hhead { font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.hhead span { font-size: 1.5rem; }
+.hhead b { color: var(--accent); }
+.howto ol { margin: 0 0 10px; padding-inline-start: 22px; line-height: 1.7; }
+.howto li::marker { color: var(--accent); font-weight: 800; }
+.hpts, .htip { border-radius: 12px; padding: 8px 12px; margin-top: 6px; line-height: 1.6; font-size: .95rem; }
+.hpts { background: #ffb7031a; border: 1px solid #ffb70355; }
+.htip { background: #4cc9f01a; border: 1px solid #4cc9f055; }
+.hbox { max-width: 520px; max-height: 88vh; overflow-y: auto; }
+.hbox .mbtns { margin-top: 14px; }
+@media (max-width: 560px) {
+  .hhead { font-size: 1rem; }
+  .howto ol { font-size: .92rem; }
+  .hpts, .htip { font-size: .85rem; }
+}
