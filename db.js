@@ -147,6 +147,7 @@ class SupaDB extends TreeDB {
     this.offset = 0;
     this.cid = makeId();
     this.q = []; this.disc = []; this.pending = [];
+    addEventListener('pagehide', () => { this._save(true); this._flushQ(); });
   }
   now() { return Date.now() + this.offset; }
   openRoom(code, create) {
@@ -196,6 +197,22 @@ class SupaDB extends TreeDB {
           } else {
             const ask = () => !this.ready && this.ch === ch && ch.send({ type: 'broadcast', event: 'hello', payload: { cid: this.cid } });
             ask(); setTimeout(ask, 1500); setTimeout(ask, 3500);
+            // بعد refresh: إلا ماكان حتى واحد آخر فالروم، كنرجعو الداتا اللي محفوظة فالمتصفح
+            const restore = () => {
+              if (this.ready || this.ch !== ch) return false;
+              const saved = this._loadSaved(code);
+              if (!saved) return false;
+              delete ((saved.rooms || {})[code] || {}).players; // اللاعبين كيرجعو يتزادو ملي يدخلو
+              this.tree = saved; this.ready = true;
+              this._fireAll(); this._save(true);
+              fin({ ok: true });
+              return true;
+            };
+            setTimeout(() => {
+              const others = Object.keys(ch.presenceState()).filter(k => k !== this.cid);
+              if (!others.length) restore();
+            }, 1300);
+            setTimeout(restore, 4500);
             setTimeout(() => { if (!this.ready) { this.closeRoom(); fin({ ok: false, err: 'nf' }); } }, 7000);
           }
         } else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') {
@@ -215,7 +232,19 @@ class SupaDB extends TreeDB {
     }
     return best === this.cid;
   }
+  _loadSaved(code) {
+    try { return JSON.parse(sessionStorage.getItem('lamma_tree_' + code) || 'null'); } catch { return null; }
+  }
+  _save(now) {
+    clearTimeout(this._sv);
+    const go = () => {
+      if (!this.code || !this.ready) return;
+      try { sessionStorage.setItem('lamma_tree_' + this.code, JSON.stringify(this.tree)); } catch {}
+    };
+    now ? go() : (this._sv = setTimeout(go, 500));
+  }
   _out(ops, origin) {
+    this._save();
     if (origin !== 'self' || !this.ch) return;
     this.q.push(...ops);
     if (!this._qt) this._qt = setTimeout(() => this._flushQ(), 120);
@@ -234,7 +263,7 @@ class SupaDB extends TreeDB {
   closeRoom(keep) {
     if (this.ch) { this._flushQ(); const ch = this.ch; this.ch = null; try { this.sb.removeChannel(ch); } catch {} }
     this.disc = []; this.ready = false;
-    if (!keep) this.tree = {};
+    if (!keep) { this.tree = {}; this.code && sessionStorage.removeItem('lamma_tree_' + this.code); }
   }
 }
 

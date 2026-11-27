@@ -1014,7 +1014,7 @@ async function main() {
         if (r.ok && (await db.get(`rooms/${saved}/meta`))) return enterRoom(saved);
       }
     }
-    joinRoom(saved);
+    toast("🔄 كنرجعو للروم..."); joinRoom(saved);
   }
 }
 // main() كتعيط ليها games2.js من بعد مايتزادو الألعاب
