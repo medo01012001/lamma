@@ -31,6 +31,20 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2600);
 }
+// نسخ النص (مع حل احتياطي إلا ماخدمش clipboard)
+function copyText(text, msg) {
+  const fallback = () => {
+    const t = document.createElement('textarea');
+    t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch {}
+    t.remove();
+    ok ? toast(msg) : prompt('نسخ من هنا:', text);
+  };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(() => toast(msg), fallback);
+  else fallback();
+}
 let AC;
 function beep(f = 660, d = 0.12, type = 'sine', v = 0.12) {
   try {
@@ -662,7 +676,7 @@ const Lobby = {
     const sel = c.meta.sel || 'draw', host = c.isHost, g = GAMES[sel];
     el.innerHTML = `<div class="lobby">
       <div class="invite card"><div><div class="muted">كود الروم</div><div class="bigcode">${S.code}</div></div>
-        <div class="invbtns"><button class="btn" id="cp">🔗 نسخ رابط الدعوة</button><button class="btn ghost" id="sh">📤 بارطاجي</button></div></div>
+        <div class="invbtns"><button class="btn" id="cc">🔑 نسخ الكود</button><button class="btn" id="cp">🔗 نسخ الرابط</button><button class="btn ghost" id="sh">📤 بارطاجي</button></div></div>
       <h2>${host ? 'ختار اللعبة 👇' : '⏳ الهوست كيختار اللعبة...'}</h2>
       <div class="gcards">${Object.values(GAMES).map(x => `<button class="gcard ${x.id === sel ? 'on' : ''}" data-g="${x.id}" ${host ? '' : 'disabled'}>
         <span class="gi">${x.icon}</span><b>${x.title}</b><small>${x.desc}</small><em>من ${x.min} ${x.min === 1 ? 'لاعب' : 'لاعبين'}</em></button>`).join('')}</div>
@@ -671,7 +685,8 @@ const Lobby = {
         : `<b data-k="${s.k}"></b>`}</label>`).join('')}</div>
       <div class="startrow">${host ? `<button class="btn big" id="go">يلاه نبداو! 🚀</button>` : `<div class="wait">تسنا حتى يبدا الهوست اللعبة</div>`}</div></div>`;
     const link = location.origin + location.pathname + '?room=' + S.code;
-    $('#cp', el).onclick = () => { navigator.clipboard?.writeText(link).then(() => toast('تنسخ الرابط ✅'), () => prompt('نسخ الرابط:', link)); };
+    $('#cc', el).onclick = () => copyText(S.code, 'تنسخ الكود ✅');
+    $('#cp', el).onclick = () => copyText(link, 'تنسخ الرابط ✅');
     $('#sh', el).onclick = () => {
       if (navigator.share) navigator.share({ title: 'لمّة', text: 'أجي تلعب معانا ف لمّة! الكود: ' + S.code, url: link }).catch(() => {});
       else $('#cp', el).click();
@@ -806,7 +821,7 @@ function saveProf() { try { localStorage.setItem('lamma_prof', JSON.stringify(pr
 function buildRoomShell() {
   $('#app').innerHTML = `<div class="room">
     <header><div class="logo sm">لمّة<span>🎉</span></div>
-      <button class="codechip" id="codechip" title="نسخ الرابط">🔑 <b dir="ltr">${S.code}</b></button>
+      <button class="codechip" id="codechip" title="نسخ الكود">🔑 <b dir="ltr">${S.code}</b></button>
       <button class="btn ghost small" id="leave">خروج 🚪</button></header>
     <main id="stage"></main>
     <aside id="side">
@@ -814,10 +829,7 @@ function buildRoomShell() {
       <div class="card" id="chat"><div class="sidehead">الشات 💬</div><div id="msgs"></div>
         <form id="cform" class="row"><input id="chatin" maxlength="120" autocomplete="off"><button class="btn small">➤</button></form></div>
     </aside></div>`;
-  $('#codechip').onclick = () => {
-    const link = location.origin + location.pathname + '?room=' + S.code;
-    navigator.clipboard?.writeText(link).then(() => toast('تنسخ رابط الدعوة ✅'));
-  };
+  $('#codechip').onclick = () => copyText(S.code, 'تنسخ الكود ✅');
   $('#leave').onclick = () => { if (confirm('واش بغيتي تخرج من الروم؟')) leaveRoom(); };
   $('#cform').onsubmit = e => { e.preventDefault(); const i = $('#chatin'); sendChat(i.value); i.value = ''; };
   const box = $('#msgs');
