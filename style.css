@@ -429,3 +429,87 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .stile { width: 50px; height: 50px; font-size: 1.6rem; }
   .rpad b { font-size: 2rem; }
 }
+
+/* ---------- الفرق والترتيب ---------- */
+.small { font-size: .85rem; }
+.teams { display: flex; flex-direction: column; gap: 10px; }
+.trow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.switch { width: 56px; height: 30px; border-radius: 999px; border: 2px solid var(--line); background: #1d1240; position: relative; cursor: pointer; padding: 0; flex: 0 0 auto; transition: background .2s; }
+.switch i { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); transition: right .2s, background .2s; }
+.switch.on { background: var(--good); border-color: var(--good); }
+.switch.on i { right: 29px; background: #fff; }
+.tcols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tcol { border-radius: 14px; padding: 10px; border: 2px solid var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent); min-width: 0; }
+.team-r { --tc: #ff4d6d; } .team-b { --tc: #4cc9f0; }
+.thead { font-weight: 800; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 6px; }
+.thead b { color: var(--accent); }
+.tlist { display: flex; flex-wrap: wrap; gap: 6px; }
+.tchip { background: #00000030; border: 2px solid var(--tc); border-radius: 999px; padding: 2px 10px; font-size: .9rem; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tchip:disabled { cursor: default; }
+.tbtns { flex-wrap: wrap; }
+.teambar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; font-weight: 800; font-size: 1.1rem; }
+.teambar .tr { color: #ff7a93; } .teambar .tb { color: #6fd8ff; } .teambar .vs { color: var(--muted); font-size: .85rem; }
+.pl.team-r, .pl.team-b { background: color-mix(in srgb, var(--tc) 14%, #24164d); }
+.winner { background: var(--card); border: 3px solid var(--accent); border-radius: var(--r); padding: 12px 16px; margin: 0 auto 12px; max-width: 560px; font-size: 1.3rem; font-weight: 800; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+.winner.team-r, .winner.team-b { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 18%, var(--card)); }
+.winner small { color: var(--muted); font-size: .95rem; width: 100%; }
+.winner.first b { color: var(--accent); }
+
+/* ---------- دعاء كفارة المجلس ---------- */
+.modal { position: fixed; inset: 0; z-index: 90; background: #0b0620cc; display: grid; place-items: center; padding: 16px; animation: fadein .2s; }
+@keyframes fadein { from { opacity: 0; } }
+.mbox { background: var(--card); border: 3px solid var(--accent); border-radius: 22px; padding: 22px 18px; max-width: 440px; width: 100%; text-align: center; box-shadow: 0 20px 60px #000a; animation: pop .3s; }
+.mtitle { font-size: 1.3rem; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+.dua { font-family: 'Amiri', serif; font-size: 1.6rem; line-height: 2.1; margin: 0 0 18px; color: #fff8ee; }
+.mbtns { display: flex; gap: 10px; justify-content: center; }
+.mbtns .btn { flex: 1; }
+
+/* ---------- كذبة ولا حقيقة ---------- */
+.tlin { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.tlrow { display: flex; gap: 8px; align-items: stretch; }
+.liebtn { flex: 0 0 auto; border-radius: 12px; border: 2px solid var(--line); background: var(--card2); padding: 0 12px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.liebtn.on { background: var(--bad); border-color: var(--bad); color: #fff; }
+.tlopts { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.tlopt { text-align: start; background: var(--card); border: 3px solid var(--line); border-radius: 16px; padding: 16px; font-size: 1.15rem; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.tlopt:not(:disabled):hover { border-color: var(--accent); }
+.tlopt.mine { border-color: var(--accent); background: #ffb70318; }
+.tlopt.lie { border-color: var(--bad); background: #ff4d6d22; }
+.tlopt.true { border-color: var(--good); opacity: .8; }
+.tltag { font-size: .9rem; font-weight: 800; }
+.tlopt:disabled { cursor: default; color: inherit; }
+
+/* ---------- زوم ---------- */
+.zbox { width: min(100%, 420px); aspect-ratio: 1; margin: 0 auto 14px; border-radius: 24px; overflow: hidden; background: radial-gradient(circle, #fff8ee, #e9dcc6); border: 4px solid var(--line); display: grid; place-items: center; }
+.zemo { font-size: min(52vw, 230px); line-height: 1; display: block; will-change: transform; user-select: none; }
+.shake { animation: shake .35s; border-color: var(--bad) !important; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+/* ---------- كمل المثل ---------- */
+.qtext.proverb { font-size: 1.8rem; }
+.qtext .dots { color: var(--accent); }
+.full-prov { font-size: 1.2rem; color: var(--accent); margin-bottom: 6px; }
+
+/* ---------- XO ---------- */
+.xoscore { font-weight: 800; font-size: 1.3rem; }
+.xoscore .tr { color: #ff7a93; } .xoscore .tb { color: #6fd8ff; }
+.xoturn { text-align: center; font-size: 1.15rem; padding: 10px; border-radius: 14px; margin-bottom: 12px; border: 2px solid var(--line); background: var(--card); }
+.xoturn.team-r, .xoturn.team-b { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 15%, var(--card)); }
+.xoboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(100%, 380px); margin: 0 auto 12px; }
+.xocell { aspect-ratio: 1; border-radius: 16px; border: 3px solid var(--line); background: var(--card); font-size: min(14vw, 64px); cursor: pointer; position: relative; display: grid; place-items: center; padding: 0; }
+.xocell:disabled { cursor: default; }
+.xocell:not(:disabled):hover { border-color: var(--accent); }
+.xocell.mine { border-color: var(--accent); background: #ffb70322; }
+.xocell.last { box-shadow: 0 0 0 3px #ffffff55 inset; }
+.xocell.line { background: #06d6a033; border-color: var(--good); animation: pop .5s; }
+.xocell .vc { position: absolute; top: 4px; left: 6px; font-size: .9rem; background: var(--accent); color: #2a1300; border-radius: 999px; padding: 0 7px; font-weight: 800; }
+.xocell .mk { animation: pop .3s; }
+
+@media (max-width: 560px) {
+  .tcols { grid-template-columns: 1fr; }
+  .winner { font-size: 1.1rem; padding: 10px 12px; }
+  .dua { font-size: 1.35rem; }
+  .tlrow { flex-direction: column; gap: 6px; }
+  .liebtn { padding: 8px; }
+  .tlopt { font-size: 1.05rem; padding: 12px; }
+  .qtext.proverb { font-size: 1.35rem; }
+}

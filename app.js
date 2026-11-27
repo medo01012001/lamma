@@ -100,8 +100,32 @@ const H = {
   },
   sys(text, k = 'sys') { db.push(R() + '/chat', { n: '', t: text, k, ts: db.now() }); },
   msg(c, id, text) { const p = c.players[id] || {}; db.push(R() + '/chat', { id, n: p.n || '؟', a: p.a || '', t: text, k: 'msg', ts: db.now() }); },
-  final() { return H.up({ 'state/phase': 'final', 'state/endsAt': null }); }
+  final() {
+    if (!S.state || S.state.counted) return;
+    const up = { 'state/phase': 'final', 'state/endsAt': null, 'state/counted': true };
+    const sc = S.scores || {}, tot = (S.meta && S.meta.totals) || {};
+    for (const id in sc) if (sc[id]) up['meta/totals/' + id] = (tot[id] || 0) + sc[id];
+    const teams = S.meta && S.meta.teamsOn ? S.meta.teams || {} : null;
+    if (teams) {
+      const t = teamSum(sc, teams), tt = (S.meta && S.meta.tt) || {};
+      up['meta/tt/r'] = (tt.r || 0) + t.r; up['meta/tt/b'] = (tt.b || 0) + t.b;
+    }
+    return H.up(up);
+  }
 };
+// ---------- الفرق ----------
+const TEAM = { r: { n: 'الفرقة الحمرا', i: '🔴', c: '#ff4d6d' }, b: { n: 'الفرقة الزرقا', i: '🔵', c: '#4cc9f0' } };
+function teamsOf(c) { return c.meta.teamsOn ? c.meta.teams || {} : (c.state && c.state.teams) || null; }
+function teamSum(map, teams) {
+  const t = { r: 0, b: 0 };
+  for (const id in map || {}) if (teams[id]) t[teams[id]] += map[id] || 0;
+  return t;
+}
+function shuffleTeams(c) {
+  const teams = {};
+  shuffle(c.ids).forEach((id, i) => (teams[id] = i % 2 ? 'b' : 'r'));
+  return teams;
+}
 function nextOnline(c, order, t) {
   for (let i = 0; i < order.length; i++) { const id = order[(t + i) % order.length]; if (c.players[id]) return id; }
   return c.ids[0];
@@ -683,7 +707,19 @@ const Lobby = {
       <div class="settings card">${g.settings.map(s => `<label><span>${s.label}</span>${host
         ? `<select data-k="${s.k}">${s.opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>`
         : `<b data-k="${s.k}"></b>`}</label>`).join('')}</div>
+      <div class="card teams" id="teams"></div>
       <div class="startrow">${host ? `<button class="btn big" id="go">يلاه نبداو! 🚀</button>` : `<div class="wait">تسنا حتى يبدا الهوست اللعبة</div>`}</div></div>`;
+    $('#teams', el).onclick = e => {
+      const cc = ctx();
+      if (!cc.isHost) return;
+      const t = e.target.closest('[data-act]');
+      if (!t) return;
+      const act = t.dataset.act;
+      if (act === 'toggle') db.update(R() + '/meta', cc.meta.teamsOn ? { teamsOn: false } : { teamsOn: true, teams: shuffleTeams(cc), tt: null });
+      else if (act === 'shuffle') db.update(R() + '/meta', { teams: shuffleTeams(cc) });
+      else if (act === 'swap') { const id = t.dataset.id, cur = (cc.meta.teams || {})[id]; db.set(R() + '/meta/teams/' + id, cur === 'r' ? 'b' : 'r'); }
+      else if (act === 'reset' && confirm('واش بغيتي ترجع المجموع ديال النقط لـ 0؟')) db.update(R() + '/meta', { totals: null, tt: null });
+    };
     const link = location.origin + location.pathname + '?room=' + S.code;
     $('#cc', el).onclick = () => copyText(S.code, 'تنسخ الكود ✅');
     $('#cp', el).onclick = () => copyText(link, 'تنسخ الرابط ✅');
@@ -706,6 +742,19 @@ const Lobby = {
       if (e.tagName === 'SELECT') { if (document.activeElement !== e) e.value = String(o[s.k]); }
       else e.textContent = (s.opts.find(x => +x[0] === +o[s.k]) || [, ''])[1];
     });
+    const on = !!c.meta.teamsOn, teams = c.meta.teams || {}, tt = c.meta.tt || {};
+    const col = k => {
+      const ids = c.ids.filter(id => teams[id] === k);
+      return `<div class="tcol team-${k}"><div class="thead">${TEAM[k].i} ${TEAM[k].n} <b>${tt[k] || 0}</b></div>
+        <div class="tlist">${ids.map(id => `<button class="tchip" data-act="swap" data-id="${id}" ${c.isHost ? '' : 'disabled'}>${(c.players[id] || {}).a || ''} ${esc(pName(c, id))}</button>`).join('') || '<span class="muted">حتى واحد</span>'}</div></div>`;
+    };
+    const th = `<div class="trow"><b>🔴🔵 فرقة ضد فرقة</b>${c.isHost
+      ? `<button class="switch ${on ? 'on' : ''}" data-act="toggle" aria-label="فرقة ضد فرقة"><i></i></button>`
+      : `<span class="muted">${on ? 'مشعولة' : 'طافية'}</span>`}</div>
+      ${on ? `<div class="tcols">${col('r')}${col('b')}</div>${c.isHost ? '<p class="muted small">كليكي على شي لاعب باش تبدل ليه الفرقة</p>' : ''}` : '<p class="muted small">كل واحد كيلعب بوحدو. شعلها باش تتقسمو لجوج فرق والنقط كتجمع للفرقة.</p>'}
+      ${c.isHost ? `<div class="row tbtns">${on ? '<button class="btn ghost small" data-act="shuffle">🔀 خلط الفرق</button>' : ''}<button class="btn ghost small" data-act="reset">🔄 صفر المجموع</button></div>` : ''}`;
+    const tc = $('#teams', el);
+    if (tc._h !== th) { tc.innerHTML = th; tc._h = th; }
     const go = $('#go', el);
     if (go) go.textContent = c.ids.length < g.min ? `خاصكم ${g.min} لاعبين على الأقل` : `يلاه نبداو! 🚀 (${c.ids.length} لاعبين)`;
   }
@@ -717,7 +766,18 @@ const Final = {
     const ids = c.ids.slice().sort((a, b) => (c.scores[b] || 0) - (c.scores[a] || 0));
     const medal = ['🥇', '🥈', '🥉'];
     const pod = [ids[1], ids[0], ids[2]];
-    el.innerHTML = `<div class="final"><h1>🏆 النتيجة النهائية</h1>
+    const teams = teamsOf(c);
+    let banner = '';
+    if (teams) {
+      const t = teamSum(c.scores, teams);
+      if (t.r === t.b) banner += `<div class="winner">🤝 تعادل بين الفرقتين! <small>${t.r} - ${t.b}</small></div>`;
+      else { const k = t.r > t.b ? 'r' : 'b'; banner += `<div class="winner team-${k}">🏆 ربحات ${TEAM[k].i} ${TEAM[k].n}! <small>🔴 ${t.r} - ${t.b} 🔵</small></div>`; }
+    }
+    if (ids[0] && (c.scores[ids[0]] || 0) > 0) {
+      const tops = ids.filter(id => c.scores[id] === c.scores[ids[0]]);
+      banner += `<div class="winner first">👑 ${tops.length > 1 ? 'الأولين بالتعادل' : 'الرابح الأول'}: ${tops.map(id => pTag(c, id)).join(' ')} <b>${c.scores[ids[0]]}</b></div>`;
+    }
+    el.innerHTML = `<div class="final"><h1>🏆 النتيجة النهائية</h1>${banner}
       <div class="podium">${pod.map((id, k) => id ? `<div class="pod p${[2, 1, 3][k]}"><div class="pa">${(c.players[id] || {}).a || '🙂'}</div><div class="pn">${esc(pName(c, id))}</div><div class="ps">${c.scores[id] || 0}</div><div class="pb">${medal[[1, 0, 2][k]]}</div></div>` : '<div class="pod empty"></div>').join('')}</div>
       <ol class="rest" start="4">${ids.slice(3).map((id, i) => `<li><span>${i + 4}. ${pTag(c, id)}</span> <b>${c.scores[id] || 0}</b></li>`).join('')}</ol>
       ${c.isHost ? `<div class="row center"><button class="btn big" id="again">🔁 عاودو</button><button class="btn big ghost" id="lob">🏠 رجع للصالون</button></div>` : '<p class="muted center">تسنا الهوست يختار اللعبة الجاية</p>'}</div>`;
@@ -790,14 +850,27 @@ function sendChat(text) {
 }
 function updateSide(c) {
   const g = GAMES[c.meta.game];
-  const ids = c.ids.slice().sort((a, b) => (c.scores[b] || 0) - (c.scores[a] || 0));
+  const inLobby = !g || !c.state.phase;
+  const vals = inLobby ? c.meta.totals || {} : c.scores;
+  const teams = teamsOf(c);
+  const ids = c.ids.slice().sort((a, b) => (vals[b] || 0) - (vals[a] || 0));
+  const medal = ['🥇', '🥈', '🥉'];
   const html = ids.map((id, i) => {
-    const p = c.players[id];
-    return `<div class="pl ${id === c.me ? 'me' : ''}" style="--pc:${p.c}"><span class="rk">${i + 1}</span><span class="av">${p.a}</span>
-      <span class="nm">${esc(p.n)}${id === c.meta.host ? ' 👑' : ''}</span><span class="bd">${g && g.badge ? g.badge(c, id) : ''}</span><span class="sc">${c.scores[id] || 0}</span></div>`;
+    const p = c.players[id], tk = teams && teams[id];
+    const rank = (vals[id] || 0) > 0 && i < 3 ? medal[i] : i + 1;
+    return `<div class="pl ${id === c.me ? 'me' : ''} ${tk ? 'team-' + tk : ''}" style="--pc:${tk ? TEAM[tk].c : p.c}"><span class="rk">${rank}</span><span class="av">${p.a}</span>
+      <span class="nm">${esc(p.n)}${id === c.meta.host ? ' 👑' : ''}</span><span class="bd">${!inLobby && g.badge ? g.badge(c, id) : ''}</span><span class="sc">${vals[id] || 0}</span></div>`;
   }).join('');
   const box = $('#plist');
   if (box._h !== html) { box.innerHTML = html; box._h = html; }
+  $('#ptitle').textContent = inLobby ? 'الترتيب العام 🏆' : 'اللاعبين';
+  let tb = '';
+  if (teams && (!inLobby || c.meta.teamsOn)) {
+    const t = inLobby ? { r: (c.meta.tt || {}).r || 0, b: (c.meta.tt || {}).b || 0 } : teamSum(c.scores, teams);
+    tb = `<div class="teambar"><span class="tr">🔴 ${t.r}</span><span class="vs">ضد</span><span class="tb">${t.b} 🔵</span></div>`;
+  }
+  const tbe = $('#teambar');
+  if (tbe._h !== tb) { tbe.innerHTML = tb; tbe._h = tb; }
   $('#pcount').textContent = `${c.ids.length}/${MAX_PLAYERS}`;
   const inp = $('#chatin');
   const guessing = c.meta.game === 'draw' && c.state.phase === 'draw';
@@ -838,6 +911,21 @@ function modeNote() {
 }
 function saveProf() { try { localStorage.setItem('lamma_prof', JSON.stringify(prof)); } catch {} }
 
+// ---------- الخروج مع دعاء كفارة المجلس ----------
+function showLeave() {
+  if ($('.modal')) return;
+  const d = document.createElement('div');
+  d.className = 'modal';
+  d.innerHTML = `<div class="mbox" role="dialog" aria-modal="true">
+    <div class="mtitle">🤲 دعاء كفارة المجلس</div>
+    <p class="dua">سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ</p>
+    <div class="mbtns"><button class="btn" id="mout">خروج 🚪</button><button class="btn ghost" id="mstay">نبقى 😊</button></div></div>`;
+  document.body.appendChild(d);
+  const close = () => d.remove();
+  $('#mstay', d).onclick = close;
+  d.onclick = e => { if (e.target === d) close(); };
+  $('#mout', d).onclick = () => { close(); leaveRoom(); };
+}
 function buildRoomShell() {
   $('#app').innerHTML = `<div class="room">
     <header><div class="logo sm">لمّة<span>🎉</span></div>
@@ -845,12 +933,12 @@ function buildRoomShell() {
       <button class="btn ghost small" id="leave">خروج 🚪</button></header>
     <main id="stage"></main>
     <aside id="side">
-      <div class="card players"><div class="sidehead">اللاعبين <span id="pcount"></span></div><div id="plist"></div></div>
+      <div class="card players"><div class="sidehead"><span id="ptitle">اللاعبين</span> <span id="pcount"></span></div><div id="teambar"></div><div id="plist"></div></div>
       <div class="card" id="chat"><div class="sidehead">الشات 💬</div><div id="msgs"></div><div id="chatpeek"></div>
         <form id="cform" class="row"><button type="button" class="chattog" id="chattog" aria-label="الشات">💬<i id="unread"></i></button><input id="chatin" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn small">➤</button></form></div>
     </aside></div>`;
   $('#codechip').onclick = () => copyText(S.code, 'تنسخ الكود ✅');
-  $('#leave').onclick = () => { if (confirm('واش بغيتي تخرج من الروم؟')) leaveRoom(); };
+  $('#leave').onclick = showLeave;
   $('#cform').onsubmit = e => { e.preventDefault(); const i = $('#chatin'); sendChat(i.value); i.value = ''; };
   $('#chattog').onclick = () => toggleChat();
   $('#chatpeek').onclick = () => toggleChat(true);
@@ -899,6 +987,15 @@ setInterval(() => {
   if (!S.code || !S.meta || !db) return;
   const c = ctx();
   tickTimers(c);
+  if (c.isHost && c.meta.teamsOn) {
+    const t = c.meta.teams || {}, miss = c.ids.filter(id => !t[id]);
+    if (miss.length) {
+      const cnt = { r: 0, b: 0 }, up = {};
+      c.ids.forEach(id => t[id] && cnt[t[id]]++);
+      miss.forEach(id => { const k = cnt.r <= cnt.b ? 'r' : 'b'; cnt[k]++; up['meta/teams/' + id] = k; });
+      H.up(up);
+    }
+  }
   if (c.isHost) {
     const g = GAMES[c.meta.game];
     if (g && c.state.phase && c.state.phase !== 'final') { try { g.tick(c); } catch (e) { console.error(e); } }

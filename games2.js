@@ -568,4 +568,4 @@ const Scramble = {
 
 Object.assign(GAMES, { story: Story, complete: Complete, scramble: Scramble, typing: Typing, reaction: Reaction, memory: Memory });
 
-main();
+
